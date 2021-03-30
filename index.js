@@ -1221,7 +1221,7 @@ instance.prototype.action = function(action) {
 		case 'monitorchannel_faderlevel':
 		case 'dcachannel_faderlevel':
 		case 'userfader_faderlevel':
-			cmd = 'FDC:' + options.channel + ',', options.level + ';';
+			cmd = 'FDC:' + options.channel + ',' + options.level + ';';
 			break;
 		case 'inputchannel_relativefaderlevel':
 		case 'subgroupchannel_relativefaderlevel':
@@ -1231,7 +1231,7 @@ instance.prototype.action = function(action) {
 		case 'monitorchannel_relativefaderlevel':
 		case 'dcachannel_relativefaderlevel':
 		case 'userfader_relativefaderlevel':
-			cmd = 'RFC:' + options.channel + ',', options.level + ';';
+			cmd = 'RFC:' + options.channel + ',' + options.level + ';';
 			break;
 		case 'scene_recall':
 			cmd = 'SCC:' + options.scene + ';';
