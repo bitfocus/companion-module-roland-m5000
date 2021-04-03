@@ -88,3 +88,10 @@ This module will allow you to control a Roland M-5000 Audio Console.
 * EQ Status
 * Channel Mute Status
 * USB Recorder Status
+
+**Serial Mixers:** (Needs serial bridge)
+
+If connected via serial bridge this module can control M-200, M-3xx and M-4xx mixers which have a serial connection
+There is an additional option for Main channels of MUL which is different from the M-5000 naming scheme for Main channels
+MUL is only for serial connected mixers
+This represents the Main Left channel but the mixer operated Left/Right as a bonded stereo pair
