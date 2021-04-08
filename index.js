@@ -81,6 +81,11 @@ instance.prototype.init = function() {
 		channelObj.label = 'Main ' + i;
 		self.CHOICES_CHANNELS_MAIN.push(channelObj);
 	}
+		// additional string for Main to allow for M-234 series mixers with serial connection
+		let channelObj = {};
+		channelObj.id = 'MAL'
+		channelObj.label = 'Main L(serial)'
+		self.CHOICES_CHANNELS_MAIN.push(channelObj);
 
 	for (let i = 1; i <= 2; i++) {
 		let channelObj = {};
