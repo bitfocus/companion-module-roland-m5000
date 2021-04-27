@@ -1,12 +1,14 @@
 {
 	"name": "roland-m5000",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"api_version": "1.0.0",
-	"keywords": [ "Audio Console" ],
+	"keywords": [
+		"Audio Console"
+	],
 	"manufacturer": "Roland",
 	"product": "M-5000",
 	"shortname": "m5000",
-	"description": "",
+	"description": "For M-5000 and with serial bridge, M-2xx, M-3xx and M-4xx",
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
@@ -20,5 +22,9 @@
 	"bugs": {
 		"url": "https://github.com/bitfocus/companion-module-roland-m5000/issues"
 	},
-	"homepage": "https://github.com/bitfocus/companion-module-roland-m5000#readme"
+	"homepage": "https://github.com/bitfocus/companion-module-roland-m5000#readme",
+	"devDependencies": {
+		"eslint": "^7.25.0",
+		"eslint-plugin-react": "^7.23.2"
+	}
 }
