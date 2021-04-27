@@ -1,3 +1,7 @@
+/* eslint-disable no-control-regex */
+/* eslint-disable no-fallthrough */
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-undef */
 // Roland-M5000 and M2xx,3xx,4xx via serial bridge
 
 let tcp = require('../../tcp')
@@ -94,7 +98,7 @@ class instance extends instance_skel {
 		let CHOICES_CHANNELS_RETURN = initChoiceArray(mx.RCount, 'R', 'Return ')
 
 		//Returns have a stereo and split mono choice depending on function
-		let CHOICES_CHANNELS_RETURN_MONO = [];
+		let CHOICES_CHANNELS_RETURN_MONO = []
 		if (mx.RCount > 0) {
 			for (const item of CHOICES_CHANNELS_RETURN) {
 				CHOICES_CHANNELS_RETURN_MONO.push({ id: item.id + 'L', label: item.label + 'L ' })
@@ -103,7 +107,7 @@ class instance extends instance_skel {
 		}
 
 		//User faders have a User structure in M-5000 and simpler in other models. This structure allows for both
-		let CHOICES_CHANNELS_USER = [];
+		let CHOICES_CHANNELS_USER = []
 		for (let i = 1; i <= mx.UserSets; i++) {
 			for (let j = 1; j <= mx.UCount; j++) {
 				let channelObj = {}
@@ -114,7 +118,7 @@ class instance extends instance_skel {
 		}
 
 		// Now set up model variant choices
-		let CHOICES_CHANNELS_MAIN = [];
+		let CHOICES_CHANNELS_MAIN = []
 		switch (this.config.model) {
 			case 'M-5000':
 				CHOICES_CHANNELS_MAIN = [
@@ -166,9 +170,7 @@ class instance extends instance_skel {
 			{ channel: 'User', choices: CHOICES_CHANNELS_USER },
 			{ channel: 'Main', choices: CHOICES_CHANNELS_MAIN },
 		]
-		this.SCOPE_MUTE_GROUP = [
-			{ channel: 'MuteGroup', choices: CHOICES_MUTE_GROUPS },
-		]		
+		this.SCOPE_MUTE_GROUP = [{ channel: 'MuteGroup', choices: CHOICES_MUTE_GROUPS }]
 		this.SCOPE_FADER = [
 			{ channel: 'Input', choices: CHOICES_CHANNELS_INPUT },
 			{ channel: 'Aux', choices: CHOICES_CHANNELS_AUX },
@@ -190,9 +192,7 @@ class instance extends instance_skel {
 					{ channel: 'Subgroup', choices: CHOICES_CHANNELS_SUBGROUP },
 					{ channel: 'Mixminus', choices: CHOICES_CHANNELS_MIXMINUS }
 				)
-				this.SCOPE_PAN.push(
-					{ channel: 'Subgroup', choices: CHOICES_CHANNELS_SUBGROUP }
-				)
+				this.SCOPE_PAN.push({ channel: 'Subgroup', choices: CHOICES_CHANNELS_SUBGROUP })
 				this.SCOPE_MUTE.push(
 					{ channel: 'Subgroup', choices: CHOICES_CHANNELS_SUBGROUP },
 					{ channel: 'Mixminus', choices: CHOICES_CHANNELS_MIXMINUS }
@@ -204,19 +204,11 @@ class instance extends instance_skel {
 				)
 				break
 			case 'M-480':
-				this.SCOPE_MUTE.push(
-					{ channel: 'Return', choices: CHOICES_CHANNELS_RETURN }
-				)
+				this.SCOPE_MUTE.push({ channel: 'Return', choices: CHOICES_CHANNELS_RETURN })
 				this.SCOPE_BRIGHTNESS.push('Lamp')
-				this.SCOPE_FADER.push(
-					{ channel: 'Return', choices: CHOICES_CHANNELS_RETURN }
-				)
-				this.SCOPE_AUXSENDPANLEVEL.push(
-					{ channel: 'Return', choices: CHOICES_CHANNELS_RETURN }
-				)
-				this.SCOPE_AUXSENDPANLEVEL.push(
-					{ channel: 'ReturnMono', choices: CHOICES_CHANNELS_RETURN_MONO }
-				)
+				this.SCOPE_FADER.push({ channel: 'Return', choices: CHOICES_CHANNELS_RETURN })
+				this.SCOPE_AUXSENDPANLEVEL.push({ channel: 'Return', choices: CHOICES_CHANNELS_RETURN })
+				this.SCOPE_AUXSENDPANLEVEL.push({ channel: 'ReturnMono', choices: CHOICES_CHANNELS_RETURN_MONO })
 				break
 			case 'M-400':
 			case 'M-380':
@@ -475,7 +467,9 @@ class instance extends instance_skel {
 			}
 		}
 		// Named items are those covered by the mute scope as a superset of all channel type items
-		this.SCOPE_MUTE.forEach((item) => { getChannels(item.choices) })
+		this.SCOPE_MUTE.forEach((item) => {
+			getChannels(item.choices)
+		})
 	}
 
 	initVariables() {
@@ -491,7 +485,9 @@ class instance extends instance_skel {
 				}
 			}
 		}
-		this.SCOPE_MUTE.forEach((item) => { addVariables(item.choices)})
+		this.SCOPE_MUTE.forEach((item) => {
+			addVariables(item.choices)
+		})
 
 		this.setVariableDefinitions(variables)
 	}
@@ -628,7 +624,7 @@ class instance extends instance_skel {
 			actions[`${item.channel.toLowerCase()}_channel_phantompower`] = switchAction(
 				'PT',
 				`${item.channel} Channel Phantom Power`,
-				item.choices 
+				item.choices
 			)
 		})
 
@@ -1156,7 +1152,7 @@ class instance extends instance_skel {
 		})
 		this.SCOPE_MUTE_GROUP.forEach((item) => {
 			presets.push(aSwitchPreset('Mute', item.channel.toLowerCase(), item.choices[0].id))
-		})		
+		})
 		this.SCOPE_FADER.forEach((item) => {
 			presets.push(aFaderPreset('Relativefaderlevel', item.channel.toLowerCase(), item.choices[0].id))
 		})
