@@ -3,10 +3,18 @@
 	"version": "1.0.2",
 	"api_version": "1.0.0",
 	"keywords": [
-		"Audio Console"
+		"Audio Console",
+		"V-Mixer"
 	],
 	"manufacturer": "Roland",
-	"product": "M-5000",
+	"product": [
+		"M-5000", 
+		"M-200i (via serial bridge)",
+		"M-300 (via serial bridge)",
+		"M-380 (via serial bridge)",
+		"M-400 (via serial bridge)",
+		"M-480 (via serial bridge)"
+	],
 	"shortname": "m5000",
 	"description": "For M-5000 and with serial bridge, M-2xx, M-3xx and M-4xx",
 	"main": "index.js",
