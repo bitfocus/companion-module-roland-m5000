@@ -29,6 +29,7 @@ The serial bridge has been tested with the TCP-Serial module and the VMXProxy op
 
 **Variables:**
 * Channel Names - names are retrieved at start-up only. It is assumed they don't change much so they are not polled to keep serial load down. 
+* If a requested channel name has not been assigned on the mixer it will cause an out of range error in the log
 
 **Feedbacks:** 
 * Channel Mute Status

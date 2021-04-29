@@ -1,7 +1,3 @@
-/* eslint-disable no-control-regex */
-/* eslint-disable no-fallthrough */
-/* eslint-disable no-unused-vars */
-/* eslint-disable no-undef */
 // Roland-M5000 and M2xx,3xx,4xx via serial bridge
 
 let tcp = require('../../tcp')
@@ -57,22 +53,21 @@ class instance extends instance_skel {
 			clearInterval(this.pollMixerTimer)
 			delete this.pollMixerTimer
 		}
-
 		this.initConfigData()
+		this.initVariables()
 		this.init_tcp()
 
-		this.initActions()
-		this.initVariables()
 		this.initWatchlist()
+		this.initActions()
 		this.initFeedbacks()
 		this.initPolling()
+
 		this.initPresets()
 	}
 
 	initConfigData() {
 		// mixer models have variant channel types, counts and function scopes
 		let mx = mixerconfig['modelconfig'][this.config.model]
-
 		const initChoiceArray = (topcount, category, labeltext) => {
 			let result = []
 
@@ -309,6 +304,8 @@ class instance extends instance_skel {
 				let keyvalue = this.buildWatchKey(category, args[0])
 				switch (category) {
 					case 'MU': // mute (polled)
+					case 'PT': // phantom (polled)
+					case 'EQ': // eq (polled)		
 						this.updateWatchItem(keyvalue, args)
 						this.checkFeedbacks()
 						break
@@ -462,6 +459,9 @@ class instance extends instance_skel {
 		const getChannels = (choicelist) => {
 			if (choicelist.length > 0) {
 				for (const item of choicelist) {
+					// a request for a channel name that has not been assigned on the mixer will result in an out of range ERR 
+					// and the variable will not be updated, so initialise here.
+					this.setVariable('name_' + item.id, 'empty')
 					this.sendCommmand(this.buildWatchKey('CN', item.id))
 				}
 			}
@@ -984,11 +984,13 @@ class instance extends instance_skel {
 				callback: (feedback, bank) => {
 					let opt = feedback.options
 					let watchlistitem = this.watchlist.get(this.buildWatchKey(aType, opt.channel))
-					if (bank.text != '') {
-						return { text: bank.text + `\\n ${watchlistitem.args[1]}` }
-					} else {
-						return { text: bank.text + `${watchlistitem.args[1]}` }
-					}
+					if (watchlistitem.args[1] !== undefined) { //avoid polling timing hazard while waiting for first data returned from mixer
+						if (bank.text != '') {
+							return { text: bank.text + `\\n ${watchlistitem.args[1]}` }
+						} else {
+							return { text: bank.text + `${watchlistitem.args[1]}` }
+						}
+					}	
 				},
 			}
 		}
@@ -1027,8 +1029,10 @@ class instance extends instance_skel {
 				callback: (feedback, bank) => {
 					let opt = feedback.options
 					let watchlistitem = this.watchlist.get(this.buildWatchKey(aType, opt.channel))
-					if (watchlistitem.args[1] == '1') {
-						return { color: opt.fg, bgcolor: opt.bg }
+					if (watchlistitem.args[1] !== undefined) { //avoid polling timing hazard while waiting for first data returned from mixer
+						if (watchlistitem.args[1] == '1') {
+							return { color: opt.fg, bgcolor: opt.bg }
+						}
 					}
 				},
 			}
