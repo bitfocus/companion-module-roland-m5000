@@ -13,7 +13,7 @@ The serial bridge has been tested with the TCP-Serial module and the VMXProxy op
 * The polling interval to get feedback data can be set in the configuration.
 * For serial mixers you will need to set the serial bridge and the mixer serial settings to match -  115kbps tested.
 * If a fader level is requested to go above maximum or below minimum levels an Out of Range Error is shown in the log
-* There is also a bug in the Roland mixer software that send an Out of Range Error when a MAIN fader command is sent. IT works but sends an error!
+* There is also a bug in the Roland mixer software that sends an Out of Range Error when a MAIN fader command is sent. The command works but sends an error!
 * There is a configuration field to enable/disable Out of Range Errors
 
 **Available actions:**
