@@ -11,7 +11,7 @@ class instance extends instance_skel {
 	constructor(system, id, config) {
 		super(system, id, config)
 
-		this.lastCmd = ''
+		this.cmdPipe = []
 		this.pollMixerTimer = undefined
 		this.watchlist = []
 
@@ -35,9 +35,6 @@ class instance extends instance_skel {
 			delete this.pollMixerTimer
 		}
 
-		if (this.watchlist !== undefined) {
-			this.watchlist.destroy()
-		}
 		debug('destroy', this.id)
 	}
 
@@ -53,7 +50,8 @@ class instance extends instance_skel {
 			clearInterval(this.pollMixerTimer)
 			delete this.pollMixerTimer
 		}
-		this.initConfigData()
+		this.config = config
+		this.initMixerData()
 		this.initVariables()
 		this.init_tcp()
 
@@ -65,7 +63,7 @@ class instance extends instance_skel {
 		this.initPresets()
 	}
 
-	initConfigData() {
+	initMixerData() {
 		// mixer models have variant channel types, counts and function scopes
 		let mx = mixerconfig['modelconfig'][this.config.model]
 		const initChoiceArray = (topcount, category, labeltext) => {
@@ -81,7 +79,6 @@ class instance extends instance_skel {
 			}
 			return result
 		}
-
 		let CHOICES_CHANNELS_INPUT = initChoiceArray(mx.ICount, 'I', 'Channel ')
 		let CHOICES_CHANNELS_SUBGROUP = initChoiceArray(mx.SGCount, 'SG', 'Subgroup ')
 		let CHOICES_CHANNELS_AUX = initChoiceArray(mx.AXCount, 'AX', 'Aux ')
@@ -141,81 +138,95 @@ class instance extends instance_skel {
 
 		//common scopes
 		this.SCOPE_PHANTOM = [
-			{ channel: 'Input', choices: CHOICES_CHANNELS_INPUT },
-			{ channel: 'User', choices: CHOICES_CHANNELS_USER },
+			{ channel: 'input', choices: CHOICES_CHANNELS_INPUT },
+			{ channel: 'user', choices: CHOICES_CHANNELS_USER },
 		]
 		this.SCOPE_EQ = [
-			{ channel: 'Input', choices: CHOICES_CHANNELS_INPUT },
-			{ channel: 'Aux', choices: CHOICES_CHANNELS_AUX },
-			{ channel: 'Matrix', choices: CHOICES_CHANNELS_MATRIX },
-			{ channel: 'Main', choices: CHOICES_CHANNELS_MAIN },
-			{ channel: 'User', choices: CHOICES_CHANNELS_USER },
+			{ channel: 'input', choices: CHOICES_CHANNELS_INPUT },
+			{ channel: 'aux', choices: CHOICES_CHANNELS_AUX },
+			{ channel: 'matrix', choices: CHOICES_CHANNELS_MATRIX },
+			{ channel: 'main', choices: CHOICES_CHANNELS_MAIN },
+			{ channel: 'user', choices: CHOICES_CHANNELS_USER },
 		]
 		this.SCOPE_PAN = [
-			{ channel: 'Input', choices: CHOICES_CHANNELS_INPUT },
-			{ channel: 'Aux', choices: CHOICES_CHANNELS_AUX },
-			{ channel: 'Matrix', choices: CHOICES_CHANNELS_MATRIX },
-			{ channel: 'User', choices: CHOICES_CHANNELS_USER },
+			{ channel: 'input', choices: CHOICES_CHANNELS_INPUT },
+			{ channel: 'aux', choices: CHOICES_CHANNELS_AUX },
+			{ channel: 'matrix', choices: CHOICES_CHANNELS_MATRIX },
+			{ channel: 'user', choices: CHOICES_CHANNELS_USER },
 		]
 		this.SCOPE_MUTE = [
-			{ channel: 'Input', choices: CHOICES_CHANNELS_INPUT },
-			{ channel: 'Aux', choices: CHOICES_CHANNELS_AUX },
-			{ channel: 'Matrix', choices: CHOICES_CHANNELS_MATRIX },
-			{ channel: 'DCA', choices: CHOICES_CHANNELS_DCA },
-			{ channel: 'User', choices: CHOICES_CHANNELS_USER },
-			{ channel: 'Main', choices: CHOICES_CHANNELS_MAIN },
+			{ channel: 'input', choices: CHOICES_CHANNELS_INPUT },
+			{ channel: 'aux', choices: CHOICES_CHANNELS_AUX },
+			{ channel: 'matrix', choices: CHOICES_CHANNELS_MATRIX },
+			{ channel: 'dca', choices: CHOICES_CHANNELS_DCA },
+			{ channel: 'user', choices: CHOICES_CHANNELS_USER },
+			{ channel: 'main', choices: CHOICES_CHANNELS_MAIN },
 		]
-		this.SCOPE_MUTE_GROUP = [{ channel: 'MuteGroup', choices: CHOICES_MUTE_GROUPS }]
+		this.SCOPE_MUTE_GROUP = [{ channel: 'mutegroup', choices: CHOICES_MUTE_GROUPS }]
 		this.SCOPE_FADER = [
-			{ channel: 'Input', choices: CHOICES_CHANNELS_INPUT },
-			{ channel: 'Aux', choices: CHOICES_CHANNELS_AUX },
-			{ channel: 'Matrix', choices: CHOICES_CHANNELS_MATRIX },
-			{ channel: 'Main', choices: CHOICES_CHANNELS_MAIN },
-			{ channel: 'DCA', choices: CHOICES_CHANNELS_DCA },
-			{ channel: 'User', choices: CHOICES_CHANNELS_USER },
+			{ channel: 'input', choices: CHOICES_CHANNELS_INPUT },
+			{ channel: 'aux', choices: CHOICES_CHANNELS_AUX },
+			{ channel: 'matrix', choices: CHOICES_CHANNELS_MATRIX },
+			{ channel: 'main', choices: CHOICES_CHANNELS_MAIN },
+			{ channel: 'dca', choices: CHOICES_CHANNELS_DCA },
+			{ channel: 'user', choices: CHOICES_CHANNELS_USER },
 		]
 		this.SCOPE_AUXSENDPANLEVEL = [
-			{ channel: 'Input', choicesC: CHOICES_CHANNELS_INPUT, choicesA: CHOICES_CHANNELS_AUX },
-			{ channel: 'User', choicesC: CHOICES_CHANNELS_USER, choicesA: CHOICES_CHANNELS_AUX },
+			{ channel: 'input', choicesC: CHOICES_CHANNELS_INPUT, choicesA: CHOICES_CHANNELS_AUX },
+			{ channel: 'user', choicesC: CHOICES_CHANNELS_USER, choicesA: CHOICES_CHANNELS_AUX },
 		]
-		this.SCOPE_BRIGHTNESS = ['Panel', 'Display']
+		this.SCOPE_BRIGHTNESS = ['panel', 'display']
 
 		// Now set up model variant scopes
 		switch (this.config.model) {
 			case 'M-5000':
 				this.SCOPE_EQ.push(
-					{ channel: 'Subgroup', choices: CHOICES_CHANNELS_SUBGROUP },
-					{ channel: 'Mixminus', choices: CHOICES_CHANNELS_MIXMINUS }
+					{ channel: 'subgroup', choices: CHOICES_CHANNELS_SUBGROUP },
+					{ channel: 'mixminus', choices: CHOICES_CHANNELS_MIXMINUS }
 				)
-				this.SCOPE_PAN.push({ channel: 'Subgroup', choices: CHOICES_CHANNELS_SUBGROUP })
+				this.SCOPE_PAN.push({ channel: 'subgroup', choices: CHOICES_CHANNELS_SUBGROUP })
 				this.SCOPE_MUTE.push(
-					{ channel: 'Subgroup', choices: CHOICES_CHANNELS_SUBGROUP },
-					{ channel: 'Mixminus', choices: CHOICES_CHANNELS_MIXMINUS }
+					{ channel: 'subgroup', choices: CHOICES_CHANNELS_SUBGROUP },
+					{ channel: 'mixminus', choices: CHOICES_CHANNELS_MIXMINUS }
 				)
 				this.SCOPE_FADER.push(
-					{ channel: 'Subgroup', choices: CHOICES_CHANNELS_SUBGROUP },
-					{ channel: 'Mixminus', choices: CHOICES_CHANNELS_MIXMINUS },
-					{ channel: 'Monitor', choices: CHOICES_CHANNELS_MONITOR }
+					{ channel: 'subgroup', choices: CHOICES_CHANNELS_SUBGROUP },
+					{ channel: 'mixminus', choices: CHOICES_CHANNELS_MIXMINUS },
+					{ channel: 'monitor', choices: CHOICES_CHANNELS_MONITOR }
 				)
 				break
 			case 'M-480':
-				this.SCOPE_MUTE.push({ channel: 'Return', choices: CHOICES_CHANNELS_RETURN })
-				this.SCOPE_BRIGHTNESS.push('Lamp')
-				this.SCOPE_FADER.push({ channel: 'Return', choices: CHOICES_CHANNELS_RETURN })
-				this.SCOPE_AUXSENDPANLEVEL.push({ channel: 'Return', choices: CHOICES_CHANNELS_RETURN })
-				this.SCOPE_AUXSENDPANLEVEL.push({ channel: 'ReturnMono', choices: CHOICES_CHANNELS_RETURN_MONO })
+				this.SCOPE_MUTE.push({ channel: 'return', choices: CHOICES_CHANNELS_RETURN })
+				this.SCOPE_BRIGHTNESS.push('lamp')
+				this.SCOPE_FADER.push({ channel: 'return', choices: CHOICES_CHANNELS_RETURN })
+				this.SCOPE_AUXSENDPANLEVEL.push({
+					channel: 'return',
+					choicesC: CHOICES_CHANNELS_RETURN,
+					choicesA: CHOICES_CHANNELS_AUX,
+				})
+				this.SCOPE_AUXSENDPANLEVEL.push({
+					channel: 'returnmono',
+					choicesC: CHOICES_CHANNELS_RETURN_MONO,
+					choicesA: CHOICES_CHANNELS_AUX,
+				})
 				break
 			case 'M-400':
 			case 'M-380':
-				this.SCOPE_BRIGHTNESS.push('Lamp')
+				this.SCOPE_BRIGHTNESS.push('lamp')
 			case 'M-300':
 			case 'M-200':
 				break
 		}
+		//safety net for changes to config initialisation
+		this.config.rf_increment = this.config.rf_increment !== undefined ? this.config.rf_increment : 1.5;
+		this.config.range_errors_enabled = this.config.range_errors_enabled !== undefined ? this.config.range_errors_enabled : false;
+		this.config.polling_enabled = this.config.polling_enabled !== undefined ? this.config.polling_enabled : true;
+		this.config.polling_interval = this.config.polling_interval !== undefined ? this.config.polling_interval : 500;
+		this.config.model = this.config.model !== undefined ? this.config.model : 'M-5000';
 	}
 
 	init_tcp() {
-		let rawbuffer = ''
+		let pipeline = ''
 
 		if (this.socket !== undefined) {
 			this.socket.destroy()
@@ -244,21 +255,25 @@ class instance extends instance_skel {
 			})
 
 			this.socket.on('data', (receivebuffer) => {
-				rawbuffer += receivebuffer.toString('utf8')
-				if (rawbuffer.length == 1 && rawbuffer.charAt(0) == '\u0006') {
-					// ignore simple <ack> responses (06H) as these come back for all successsful Control commands
-					rawbuffer = '' // this could happen below but good for debug here
+				pipeline += receivebuffer.toString('utf8')
+				if (pipeline.length == 1 && pipeline.charAt(0) == '\u0006') {
+					// process simple <ack> responses (06H) as these come back for all successsful Control commands
+					this.cmdPipe.pop()
+					pipeline = '' 
 				} else {
-					// partial response buffer processing as TCP Serial module can return partial responses in stream. The VMXProxy service will always return complete responses
-					let cleanbuffer = rawbuffer.replace(/\u0006/g, '') // strip out <ack>s that may be embedded in async stream of a multiple message response (unlikely!)
-					if (cleanbuffer.includes(';')) {
+					// partial response pipeline processing as TCP Serial module can return partial responses in stream. The VMXProxy service will always return complete responses
+					if (pipeline.includes(';')) {
 						// got at least one command terminated with ';'
 						// multiple rapid Query strings can result in async multiple responses so split response into individual messages
-						let allresponses = cleanbuffer.split(';')
-						rawbuffer = allresponses.pop() // last element will either be a partial response or an empty string from split if a complete buffer ends with ';'
-						for (const response of allresponses) {
+						let allresponses = pipeline.split(';')
+						pipeline = allresponses.pop() // last element will either be a partial response or an empty string from split where a complete pipeline ends with ';'
+						for (let response of allresponses) {
 							if (response.length > 0) {
-								// probably not needed :-)
+								// Small chance of embedded <ack> responses. From previous pipeline slice these will be at start of response
+								while (response.charAt[0] == '\u0006') {
+									response = response.slice(1)
+									this.cmdPipe.pop()
+								}
 								this.processResponse(response)
 							}
 						}
@@ -269,8 +284,9 @@ class instance extends instance_skel {
 	}
 
 	processResponse(response) {
-		// should be <ack><category><separator><argstring> - Separator is S: for reSponse, Q: for Query, C: for Control
+		// Should be <stx><category><separator><argstring> - Separator is S: for reSponse, Q: for Query, C: for Control
 		// A Query sent to the mixer will generate a matching reSponse (or an error)
+		let pipeitem = this.cmdPipe.pop()
 		let startchar = response.charAt(0)
 		if (startchar == '\u0002' && response.substring(1, 5) == 'ERR:') {
 			let errcode = response.substring(5, 6)
@@ -292,7 +308,9 @@ class instance extends instance_skel {
 					errstring = '(UNKNOWN Error)'
 					break
 			}
-			this.log('error', 'ERR: ' + errstring + ' - Last Command = ' + this.lastCmd)
+			if (errcode != '5' || this.config.range_errors_enabled) { // supress errors when hitting fader end stops and/or Main channel fader(Roland) false error bug
+				this.log('error', 'ERR: ' + errstring + ' - Command = ' + pipeitem)
+			}
 		} else {
 			let category = response.substring(1, 3)
 			let settingseparator = response.substring(3, 5)
@@ -305,7 +323,7 @@ class instance extends instance_skel {
 				switch (category) {
 					case 'MU': // mute (polled)
 					case 'PT': // phantom (polled)
-					case 'EQ': // eq (polled)		
+					case 'EQ': // eq (polled)
 						this.updateWatchItem(keyvalue, args)
 						this.checkFeedbacks()
 						break
@@ -326,7 +344,7 @@ class instance extends instance_skel {
 		if (cmd !== undefined) {
 			if (this.socket !== undefined && this.socket.connected) {
 				this.socket.send('\u0002' + cmd + ';')
-				this.lastCmd = cmd
+				this.cmdPipe.unshift(cmd)  // pipe buffer to match commands and responses asynchronously
 			} else {
 				debug('Socket not connected :(')
 			}
@@ -355,6 +373,9 @@ class instance extends instance_skel {
 			}
 			if (item.action.slice(-4) == 'mute') {
 				this.addWatchItem('MU', item.options.channel, item.id)
+			}
+			if (item.action.slice(-2) == 'eq') {
+				this.addWatchItem('EQ', item.options.channel, item.id)
 			}
 		})
 	}
@@ -402,7 +423,11 @@ class instance extends instance_skel {
 
 	updateWatchItem(keyvalue, args) {
 		let watchitem = this.watchlist.get(keyvalue)
-		watchitem.args = args
+		if (watchitem === undefined){
+			this.log('error', 'Error, cannot update unknown watchlist item = ' + keyvalue)
+		} else {
+			watchitem.args = args
+		}
 	}
 
 	config_fields() {
@@ -452,6 +477,22 @@ class instance extends instance_skel {
 				default: 500,
 				width: 8,
 			},
+			{
+				type: 'number',
+				id: 'rf_increment',
+				label: 'Relative Fader Increment',
+				min: 0,
+				max: 15,
+				default: 1.5,
+				width: 8,
+			},
+			{
+				type: 'checkbox',
+				id: 'range_errors_enabled',
+				label: 'Enable Out Of Range Errors    :',
+				default: false,
+				width: 8,
+			},
 		]
 	}
 
@@ -459,7 +500,7 @@ class instance extends instance_skel {
 		const getChannels = (choicelist) => {
 			if (choicelist.length > 0) {
 				for (const item of choicelist) {
-					// a request for a channel name that has not been assigned on the mixer will result in an out of range ERR 
+					// a request for a channel name that has not been assigned on the mixer will result in an out of range ERR
 					// and the variable will not be updated, so initialise here.
 					this.setVariable('name_' + item.id, 'empty')
 					this.sendCommmand(this.buildWatchKey('CN', item.id))
@@ -474,7 +515,6 @@ class instance extends instance_skel {
 
 	initVariables() {
 		let variables = []
-
 		const addVariables = (choicelist) => {
 			if (choicelist.length > 0) {
 				for (const item of choicelist) {
@@ -621,23 +661,23 @@ class instance extends instance_skel {
 
 		// common channel actions
 		this.SCOPE_PHANTOM.forEach((item) => {
-			actions[`${item.channel.toLowerCase()}_channel_phantompower`] = switchAction(
+			actions[`${item.channel}_channel_phantompower`] = switchAction(
 				'PT',
-				`${item.channel} Channel Phantom Power`,
+				`${item.channel.toUpperCase()} Channel Phantom Power`,
 				item.choices
 			)
 		})
 
 		this.SCOPE_EQ.forEach((item) => {
-			actions[`${item.channel.toLowerCase()}_channel_eq`] = switchAction(
+			actions[`${item.channel}_channel_eq`] = switchAction(
 				'EQ',
-				`${item.channel} Channel EQ`,
+				`${item.channel.toUpperCase()} Channel EQ`,
 				item.choices
 			)
 		})
 		this.SCOPE_PAN.forEach((item) => {
-			actions[`${item.channel.toLowerCase()}_channel_pan`] = panAction(
-				`${item.channel} Channel Pan`,
+			actions[`${item.channel}_channel_pan`] = panAction(
+				`${item.channel.toUpperCase()} Channel Pan`,
 				item.choices,
 				'Pan (L100-C-R100) *Steps of 1',
 				'pan',
@@ -645,8 +685,8 @@ class instance extends instance_skel {
 			)
 		})
 		this.SCOPE_FADER.forEach((item) => {
-			actions[`${item.channel.toLowerCase()}_channel_faderlevel`] = faderAction(
-				`${item.channel} Channel Fader Level`,
+			actions[`${item.channel}_channel_faderlevel`] = faderAction(
+				`${item.channel.toUpperCase()} Channel Fader Level`,
 				item.choices,
 				'Fader level (INF, -80.0 - 10.0) *0.1 dB steps',
 				'level',
@@ -654,36 +694,36 @@ class instance extends instance_skel {
 			)
 		})
 		this.SCOPE_FADER.forEach((item) => {
-			actions[`${item.channel.toLowerCase()}_channel_relativefaderlevel`] = faderAction(
-				`${item.channel} Channel Relative Fader Level`,
+			actions[`${item.channel}_channel_relativefaderlevel`] = faderAction(
+				`${item.channel.toUpperCase()} Channel Relative Fader Level`,
 				item.choices,
 				'Relative fader level (-99.9 - 99.9) *0.1 dB steps',
 				'level',
-				'0'
+				this.config.rf_increment.toString()
 			)
 		})
 		this.SCOPE_AUXSENDPANLEVEL.forEach((item) => {
-			actions[`${item.channel.toLowerCase()}_channel_auxsendpanlevel`] = auxPanFaderAction(
-				`Set ${item.channel} Channel Aux Send/Aux Pan Level`,
+			actions[`${item.channel}_channel_auxsendpanlevel`] = auxPanFaderAction(
+				`Set ${item.channel.toUpperCase()} Channel Aux Send/Aux Pan Level`,
 				item.channel,
 				item.choicesC,
 				item.choicesA
 			)
 		})
 		this.SCOPE_BRIGHTNESS.forEach((item) => {
-			actions[`${item.toLowerCase()}_brightness`] = brightnessAction(`${item} Brightness`)
+			actions[`${item}_brightness`] = brightnessAction(`${item.toUpperCase()} Brightness`)
 		})
 		this.SCOPE_MUTE.forEach((item) => {
-			actions[`${item.channel.toLowerCase()}_channel_mute`] = switchAction(
+			actions[`${item.channel}_channel_mute`] = switchAction(
 				'MU',
-				`${item.channel} Channel Mute`,
+				`${item.channel.toUpperCase()} Channel Mute`,
 				item.choices
 			)
 		})
 		this.SCOPE_MUTE_GROUP.forEach((item) => {
-			actions[`${item.channel.toLowerCase()}_channel_mute`] = switchAction(
+			actions[`${item.channel}_channel_mute`] = switchAction(
 				'MU',
-				`${item.channel} Channel Mute`,
+				`${item.channel.toUpperCase()} Channel Mute`,
 				item.choices
 			)
 		})
@@ -984,18 +1024,19 @@ class instance extends instance_skel {
 				callback: (feedback, bank) => {
 					let opt = feedback.options
 					let watchlistitem = this.watchlist.get(this.buildWatchKey(aType, opt.channel))
-					if (watchlistitem.args[1] !== undefined) { //avoid polling timing hazard while waiting for first data returned from mixer
+					if (watchlistitem !== undefined && watchlistitem.args[1] !== undefined) {
+						//avoid polling timing hazard while waiting for first data returned from mixer
 						if (bank.text != '') {
 							return { text: bank.text + `\\n ${watchlistitem.args[1]}` }
 						} else {
 							return { text: bank.text + `${watchlistitem.args[1]}` }
 						}
-					}	
+					}
 				},
 			}
 		}
 
-		const aSubscribeStateFeedback = (aType, aLabel, aChoice) => {
+		const aSubscribeStateFeedback = (aType, aLabel, aChoice, fg, bg) => {
 			return {
 				label: aLabel,
 				description: 'Show ' + aLabel,
@@ -1011,13 +1052,13 @@ class instance extends instance_skel {
 						type: 'colorpicker',
 						label: 'Foreground color',
 						id: 'fg',
-						default: this.rgb(255, 255, 255),
+						default: fg,
 					},
 					{
 						type: 'colorpicker',
 						label: 'Background color',
 						id: 'bg',
-						default: this.rgb(255, 0, 0),
+						default: bg,
 					},
 				],
 				subscribe: (feedback) => {
@@ -1029,7 +1070,8 @@ class instance extends instance_skel {
 				callback: (feedback, bank) => {
 					let opt = feedback.options
 					let watchlistitem = this.watchlist.get(this.buildWatchKey(aType, opt.channel))
-					if (watchlistitem.args[1] !== undefined) { //avoid polling timing hazard while waiting for first data returned from mixer
+					if (watchlistitem !== undefined && watchlistitem.args[1] !== undefined) {
+						//avoid polling timing hazard while waiting for first data returned from mixer
 						if (watchlistitem.args[1] == '1') {
 							return { color: opt.fg, bgcolor: opt.bg }
 						}
@@ -1039,16 +1081,36 @@ class instance extends instance_skel {
 		}
 
 		this.SCOPE_MUTE.forEach((item) => {
-			feedbacks[`${item.channel.toLowerCase()}_channel_mute`] = aSubscribeStateFeedback(
+			feedbacks[`${item.channel}_channel_mute`] = aSubscribeStateFeedback(
 				'MU',
-				`${item.channel} Channel Mute`,
-				item.choices
+				`${item.channel.toUpperCase()} Channel Mute`,
+				item.choices,
+				this.rgb(255, 255, 255),
+				this.rgb(255, 0, 0)
+			)
+		})
+		this.SCOPE_EQ.forEach((item) => {
+			feedbacks[`${item.channel}_channel_eq`] = aSubscribeStateFeedback(
+				'EQ',
+				`${item.channel.toUpperCase()} Channel Eq`,
+				item.choices,
+				this.rgb(255, 255, 255),
+				this.rgb(255, 170, 0)
+			)
+		})
+		this.SCOPE_PHANTOM.forEach((item) => {
+			feedbacks[`${item.channel}_channel_phantompower`] = aSubscribeStateFeedback(
+				'PT',
+				`${item.channel.toUpperCase()} Channel Phantom Power`,
+				item.choices,
+				this.rgb(255, 255, 255),
+				this.rgb(255, 170, 0)
 			)
 		})
 		this.SCOPE_FADER.forEach((item) => {
-			feedbacks[`${item.channel.toLowerCase()}_channel_level`] = aSubscribeLevelFeedback(
+			feedbacks[`${item.channel}_channel_level`] = aSubscribeLevelFeedback(
 				'FD',
-				`${item.channel} Channel Level`,
+				`${item.channel.toUpperCase()} Channel Level`,
 				item.choices
 			)
 		})
@@ -1071,7 +1133,7 @@ class instance extends instance_skel {
 				},
 				actions: [
 					{
-						action: aScope + '_channel_' + aType.toLowerCase(),
+						action: aScope + '_channel_' + aType,
 						options: {
 							channel: aChoice,
 							onoff: 'T',
@@ -1080,7 +1142,7 @@ class instance extends instance_skel {
 				],
 				feedbacks: [
 					{
-						type: aScope + '_channel_' + aType.toLowerCase(),
+						type: aScope + '_channel_' + aType,
 						options: {
 							channel: aChoice,
 							fg: this.rgb(255, 255, 255),
@@ -1103,7 +1165,7 @@ class instance extends instance_skel {
 				},
 				actions: [
 					{
-						action: aScope + '_channel_' + aType.toLowerCase(),
+						action: aScope + '_channel_' + aType,
 						options: {
 							channel: aChoice,
 							onoff: 'T',
@@ -1112,7 +1174,7 @@ class instance extends instance_skel {
 				],
 				feedbacks: [
 					{
-						type: aScope + '_channel_' + aType.toLowerCase(),
+						type: aScope + '_channel_' + aType,
 						options: {
 							channel: aChoice,
 							fg: this.rgb(255, 255, 255),
@@ -1128,23 +1190,23 @@ class instance extends instance_skel {
 				],
 			}
 		}
-		const aFaderPreset = (aType, aScope, aChoice) => {
+		const aFaderPreset = (aType, aScope, aChoice, aMove, aText) => {
 			return {
 				category: aScope,
 				label: aScope + ' Faders',
 				bank: {
 					style: 'text',
-					text: '&#129153; &#129155;',
+					text: aText,
 					size: 'auto',
 					color: this.rgb(255, 255, 255),
 					bgcolor: 0,
 				},
 				actions: [
 					{
-						action: aScope + '_channel_' + aType.toLowerCase(),
+						action: aScope + '_channel_' + aType,
 						options: {
 							channel: aChoice,
-							level: '0',
+							level: aMove,
 						},
 					},
 				],
@@ -1152,14 +1214,32 @@ class instance extends instance_skel {
 		}
 
 		this.SCOPE_MUTE.forEach((item) => {
-			presets.push(aSwitchLevelPreset('Mute', item.channel.toLowerCase(), item.choices[0].id))
+			presets.push(aSwitchLevelPreset('mute', item.channel, item.choices[0].id))
 		})
 		this.SCOPE_MUTE_GROUP.forEach((item) => {
-			presets.push(aSwitchPreset('Mute', item.channel.toLowerCase(), item.choices[0].id))
+			presets.push(aSwitchPreset('mute', item.channel, item.choices[0].id))
 		})
 		this.SCOPE_FADER.forEach((item) => {
-			presets.push(aFaderPreset('Relativefaderlevel', item.channel.toLowerCase(), item.choices[0].id))
+			presets.push(
+				aFaderPreset(
+					'relativefaderlevel',
+					item.channel,
+					item.choices[0].id,
+					this.config.rf_increment.toString(),
+					'&#129153;'
+				)
+			)
+			presets.push(
+				aFaderPreset(
+					'relativefaderlevel',
+					item.channel,
+					item.choices[0].id,
+					-this.config.rf_increment.toString(),
+					'&#129155;'
+				)
+			)
 		})
+
 		this.setPresetDefinitions(presets)
 	}
 }
