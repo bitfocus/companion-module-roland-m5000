@@ -51,6 +51,13 @@ class instance extends instance_skel {
 			delete this.pollMixerTimer
 		}
 		this.config = config
+
+		this.config.rf_increment = this.config.rf_increment !== undefined ? this.config.rf_increment : 1.5;
+		this.config.range_errors_enabled = this.config.range_errors_enabled !== undefined ? this.config.range_errors_enabled : false;
+		this.config.polling_enabled = this.config.polling_enabled !== undefined ? this.config.polling_enabled : true;
+		this.config.polling_interval = this.config.polling_interval !== undefined ? this.config.polling_interval : 500;
+		this.config.model = this.config.model !== undefined ? this.config.model : 'M-5000';
+		
 		this.initMixerData()
 		this.initVariables()
 		this.init_tcp()
@@ -194,8 +201,11 @@ class instance extends instance_skel {
 					{ channel: 'mixminus', choices: CHOICES_CHANNELS_MIXMINUS },
 					{ channel: 'monitor', choices: CHOICES_CHANNELS_MONITOR }
 				)
+				this.SCOPE_BRIGHTNESS.push('lamp')
 				break
 			case 'M-480':
+				this.SCOPE_PHANTOM.push({ channel: 'return', choices: CHOICES_CHANNELS_RETURN_MONO })
+				this.SCOPE_PAN.push({ channel: 'return', choices: CHOICES_CHANNELS_RETURN_MONO })
 				this.SCOPE_MUTE.push({ channel: 'return', choices: CHOICES_CHANNELS_RETURN })
 				this.SCOPE_BRIGHTNESS.push('lamp')
 				this.SCOPE_FADER.push({ channel: 'return', choices: CHOICES_CHANNELS_RETURN })
@@ -217,12 +227,6 @@ class instance extends instance_skel {
 			case 'M-200':
 				break
 		}
-		//safety net for changes to config initialisation
-		this.config.rf_increment = this.config.rf_increment !== undefined ? this.config.rf_increment : 1.5;
-		this.config.range_errors_enabled = this.config.range_errors_enabled !== undefined ? this.config.range_errors_enabled : false;
-		this.config.polling_enabled = this.config.polling_enabled !== undefined ? this.config.polling_enabled : true;
-		this.config.polling_interval = this.config.polling_interval !== undefined ? this.config.polling_interval : 500;
-		this.config.model = this.config.model !== undefined ? this.config.model : 'M-5000';
 	}
 
 	init_tcp() {
@@ -256,24 +260,20 @@ class instance extends instance_skel {
 
 			this.socket.on('data', (receivebuffer) => {
 				pipeline += receivebuffer.toString('utf8')
-				if (pipeline.length == 1 && pipeline.charAt(0) == '\u0006') {
+				if (pipeline.length == 1 && pipeline.charAt(0) === '\u0006') {
 					// process simple <ack> responses (06H) as these come back for all successsful Control commands
-					this.cmdPipe.pop()
+					this.cmdPipeNext()
 					pipeline = '' 
 				} else {
 					// partial response pipeline processing as TCP Serial module can return partial responses in stream. The VMXProxy service will always return complete responses
-					if (pipeline.includes(';')) {
+					// look for <stx> and ; bracketing
+					if (pipeline.includes('\u0002') && pipeline.includes(';')) {
 						// got at least one command terminated with ';'
-						// multiple rapid Query strings can result in async multiple responses so split response into individual messages
+						// multiple rapid Query strings can result in multiple responses so split response into individual messages
 						let allresponses = pipeline.split(';')
 						pipeline = allresponses.pop() // last element will either be a partial response or an empty string from split where a complete pipeline ends with ';'
 						for (let response of allresponses) {
 							if (response.length > 0) {
-								// Small chance of embedded <ack> responses. From previous pipeline slice these will be at start of response
-								while (response.charAt[0] == '\u0006') {
-									response = response.slice(1)
-									this.cmdPipe.pop()
-								}
 								this.processResponse(response)
 							}
 						}
@@ -283,10 +283,28 @@ class instance extends instance_skel {
 		}
 	}
 
+	cmdPipeNext() {
+		if (this.cmdPipe.length > 0){
+		return this.cmdPipe.pop()
+		} else {
+			this.log('error', 'Unexpected response count (pipe underrun)')
+			return ''
+		}
+	}
 	processResponse(response) {
+		// Chance of embedded <ack> responses. From previous pipeline split these will be at start of response
+		while (response.charAt(0) !== '\u0002') {
+			if (response.charAt(0) === '\u0006') {
+				response = response.slice(1)
+				this.cmdPipeNext()
+			} else {
+				this.log('error', 'Unexpected character in response: ' + response.charAt(0) + ' : Char code : ' + response.charCodeAt(0))
+				response = response.slice(1)
+			}
+		}
 		// Should be <stx><category><separator><argstring> - Separator is S: for reSponse, Q: for Query, C: for Control
 		// A Query sent to the mixer will generate a matching reSponse (or an error)
-		let pipeitem = this.cmdPipe.pop()
+		let pipeitem = this.cmdPipeNext()
 		let startchar = response.charAt(0)
 		if (startchar == '\u0002' && response.substring(1, 5) == 'ERR:') {
 			let errcode = response.substring(5, 6)
@@ -344,7 +362,7 @@ class instance extends instance_skel {
 		if (cmd !== undefined) {
 			if (this.socket !== undefined && this.socket.connected) {
 				this.socket.send('\u0002' + cmd + ';')
-				this.cmdPipe.unshift(cmd)  // pipe buffer to match commands and responses asynchronously
+				this.cmdPipe.unshift(cmd)  // pipe buffer to match Commands and responSes asynchronously. Every command gets an <ack>, response or error.
 			} else {
 				debug('Socket not connected :(')
 			}
@@ -476,6 +494,7 @@ class instance extends instance_skel {
 				max: 30000,
 				default: 500,
 				width: 8,
+				regex: this.REGEX_NUMBER,
 			},
 			{
 				type: 'number',
@@ -485,6 +504,7 @@ class instance extends instance_skel {
 				max: 15,
 				default: 1.5,
 				width: 8,
+				regex: this.REGEX_SIGNED_FLOAT,
 			},
 			{
 				type: 'checkbox',
@@ -511,6 +531,9 @@ class instance extends instance_skel {
 		this.SCOPE_MUTE.forEach((item) => {
 			getChannels(item.choices)
 		})
+		this.SCOPE_MUTE_GROUP.forEach((item) => {
+			getChannels(item.choices)
+		})
 	}
 
 	initVariables() {
@@ -526,6 +549,9 @@ class instance extends instance_skel {
 			}
 		}
 		this.SCOPE_MUTE.forEach((item) => {
+			addVariables(item.choices)
+		})
+		this.SCOPE_MUTE_GROUP.forEach((item) => {
 			addVariables(item.choices)
 		})
 
@@ -550,7 +576,7 @@ class instance extends instance_skel {
 						type: 'dropdown',
 						label: 'On/Off/Toggle',
 						id: 'switch',
-						default: '0',
+						default: 'T',
 						choices: [
 							{ id: '1', label: 'On' },
 							{ id: '0', label: 'Off' },
@@ -912,13 +938,13 @@ class instance extends instance_skel {
 				break
 			case 'input_channel_auxsendpanlevel':
 			case 'user_channel_auxsendpanlevel':
-				cmd = 'AXC:' + options.channel + ',' + options.aux + ',' + options.auxsendlevel + ',' + options.auxpan
+				cmd = 'AXC:' + options.channel + ',' + options.aux + ',' + options.auxsendlevel + ',' + options.auxpan.toUpperCase()
 				break
 			case 'input_channel_pan':
 			case 'subgroup_channel_pan':
 			case 'aux_channel_pan':
 			case 'user_channel_pan':
-				cmd = 'PNC:' + options.channel + ',' + options.pan
+				cmd = 'PNC:' + options.channel + ',' + options.pan.toUpperCase()
 				break
 			case 'input_channel_mute':
 			case 'subgroup_channel_mute':
@@ -1089,6 +1115,15 @@ class instance extends instance_skel {
 				this.rgb(255, 0, 0)
 			)
 		})
+		this.SCOPE_MUTE_GROUP.forEach((item) => {
+			feedbacks[`${item.channel}_channel_mute`] = aSubscribeStateFeedback(
+				'MU',
+				`${item.channel.toUpperCase()} Channel Mute`,
+				item.choices,
+				this.rgb(255, 255, 255),
+				this.rgb(255, 0, 0)
+			)
+		})
 		this.SCOPE_EQ.forEach((item) => {
 			feedbacks[`${item.channel}_channel_eq`] = aSubscribeStateFeedback(
 				'EQ',
@@ -1136,7 +1171,7 @@ class instance extends instance_skel {
 						action: aScope + '_channel_' + aType,
 						options: {
 							channel: aChoice,
-							onoff: 'T',
+							switch: 'T',
 						},
 					},
 				],
@@ -1168,7 +1203,7 @@ class instance extends instance_skel {
 						action: aScope + '_channel_' + aType,
 						options: {
 							channel: aChoice,
-							onoff: 'T',
+							switch: 'T',
 						},
 					},
 				],
@@ -1190,13 +1225,14 @@ class instance extends instance_skel {
 				],
 			}
 		}
-		const aFaderPreset = (aType, aScope, aChoice, aMove, aText) => {
+		const aFaderPreset = (aType, aScope, aChoice, aMove, anIcon) => {
 			return {
 				category: aScope,
 				label: aScope + ' Faders',
 				bank: {
-					style: 'text',
-					text: aText,
+					style: 'png',
+					text: '',
+					png64: anIcon,
 					size: 'auto',
 					color: this.rgb(255, 255, 255),
 					bgcolor: 0,
@@ -1226,7 +1262,7 @@ class instance extends instance_skel {
 					item.channel,
 					item.choices[0].id,
 					this.config.rf_increment.toString(),
-					'&#129153;'
+					this.ICON_UP
 				)
 			)
 			presets.push(
@@ -1235,7 +1271,7 @@ class instance extends instance_skel {
 					item.channel,
 					item.choices[0].id,
 					-this.config.rf_increment.toString(),
-					'&#129155;'
+					this.ICON_DOWN
 				)
 			)
 		})
@@ -1244,5 +1280,4 @@ class instance extends instance_skel {
 	}
 }
 
-instance_skel.extendedBy(instance)
 exports = module.exports = instance

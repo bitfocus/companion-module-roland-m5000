@@ -11,6 +11,6 @@ The latter was built for an android application but also works with this module 
 Commands are \<stx\>**C:args;   -   where ** is a function/category code
 The VMXProxy server is protocol aware and always returns complete responses (which are either \<ack\> for a success, \<stx\>ERR:errcode; for an error, or, \<stx\>**S:args; for a response)
 Multiple responses are possible in a pipeline after a rapid sequence of commands.
-the TCP-Serial companion module will return whatever it has in the buffer so it can send back partial responses. The TCP handling code in the module allows for this by buffering partial responses.
+the TCP-Serial companion module will return whatever it has in the buffer so it can send back partial responses. The TCP handling code in this module allows for this by buffering partial responses.
 
 As serial mixers have a limited bandwidth connection the module only asks for what it needs - channel names at start-up (they don't change much) and status and levels as needed for the button configuration. These are polled on a timer.
