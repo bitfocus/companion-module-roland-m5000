@@ -52,12 +52,13 @@ class instance extends instance_skel {
 		}
 		this.config = config
 
-		this.config.rf_increment = this.config.rf_increment !== undefined ? this.config.rf_increment : 1.5;
+		this.config.log_fader_move_enabled = this.config.log_fader_move_enabled !== undefined ? this.config.log_fader_move_enabled : true;
+		this.config.polling_enabled = this.config.polling_enabled !== undefined ? this.config.polling_enabled : true;
 		this.config.range_errors_enabled = this.config.range_errors_enabled !== undefined ? this.config.range_errors_enabled : false;
 		this.config.polling_enabled = this.config.polling_enabled !== undefined ? this.config.polling_enabled : true;
 		this.config.polling_interval = this.config.polling_interval !== undefined ? this.config.polling_interval : 500;
 		this.config.model = this.config.model !== undefined ? this.config.model : 'M-5000';
-		
+	
 		this.initMixerData()
 		this.initVariables()
 		this.init_tcp()
@@ -508,6 +509,13 @@ class instance extends instance_skel {
 			},
 			{
 				type: 'checkbox',
+				id: 'log_fader_move_enabled',
+				label: 'Relative fader moves use log scaling    :',
+				default: true,
+				width: 8,
+			},
+			{
+				type: 'checkbox',
 				id: 'range_errors_enabled',
 				label: 'Enable Out Of Range Errors    :',
 				default: false,
@@ -614,7 +622,7 @@ class instance extends instance_skel {
 			}
 		}
 
-		const faderAction = (aLabel, aChoice, aRange, anId2, aDefault2) => {
+		const faderAction = (aType, aLabel, aChoice, aRange, anId2, aDefault2) => {
 			return {
 				label: aLabel,
 				options: [
@@ -632,6 +640,12 @@ class instance extends instance_skel {
 						default: aDefault2,
 					},
 				],
+				subscribe: (action) => {
+					this.addWatchItem(aType, action.options.channel, action.id)
+				},
+				unsubscribe: (action) => {
+					this.removeWatchItem(aType, action.options.channel, action.id)
+				},
 			}
 		}
 		const auxPanFaderAction = (aLabel, anId, aChoiceC, aChoiceA) => {
@@ -712,6 +726,7 @@ class instance extends instance_skel {
 		})
 		this.SCOPE_FADER.forEach((item) => {
 			actions[`${item.channel}_channel_faderlevel`] = faderAction(
+				'FD',
 				`${item.channel.toUpperCase()} Channel Fader Level`,
 				item.choices,
 				'Fader level (INF, -80.0 - 10.0) *0.1 dB steps',
@@ -721,6 +736,7 @@ class instance extends instance_skel {
 		})
 		this.SCOPE_FADER.forEach((item) => {
 			actions[`${item.channel}_channel_relativefaderlevel`] = faderAction(
+				'FD',
 				`${item.channel.toUpperCase()} Channel Relative Fader Level`,
 				item.choices,
 				'Relative fader level (-99.9 - 99.9) *0.1 dB steps',
@@ -921,6 +937,18 @@ class instance extends instance_skel {
 				return anOnOffToggle
 			}
 		}
+		const faderMove = (aChannel, aValue) => {
+			// log value scaling of movement for fader
+			let g = 4
+			let f = this.watchlist.get(this.buildWatchKey('FD', aChannel)).args[1]
+			if (f == 0) {f=0.0001}
+			if (this.config.log_fader_move_enabled) {
+				let result = Math.round(10*(aValue * Math.exp(Math.log10(Math.abs(f/g)))))/10 // 1 decimal place
+				return Math.abs(result) > Math.abs(aValue) ? result : aValue // miniumum move is aValue
+			} else {
+				return Math.round(10 * aValue)/10
+			}
+		}
 
 		switch (action.action) {
 			case 'input_channel_phantompower':
@@ -975,7 +1003,7 @@ class instance extends instance_skel {
 			case 'monitor_channel_relativefaderlevel':
 			case 'dca_channel_relativefaderlevel':
 			case 'user_channel_relativefaderlevel':
-				cmd = 'RFC:' + options.channel + ',' + options.level
+				cmd = 'RFC:' + options.channel + ',' + faderMove(options.channel, options.level)
 				break
 			case 'scene_recall':
 				cmd = 'SCC:' + options.scene

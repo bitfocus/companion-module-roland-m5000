@@ -17,6 +17,7 @@ Many of the available actions on the mixr are implemented. There are a few missi
 * If a fader level is requested to go above maximum or below minimum levels an Out of Range Error is shown in the log
 * There is also a bug in the Roland mixer software that sends an Out of Range Error when a MAIN fader command is sent. The command works but sends an error!
 * There is a configuration field to enable/disable Out of Range Errors in the log
+* There are configuration fields to set he default value for relative fader moves and enable a logarithmic response 
 
 **Available actions:**
 * Input, User Channel Phantom Power On/Off
