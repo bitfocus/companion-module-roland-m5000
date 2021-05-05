@@ -941,7 +941,7 @@ class instance extends instance_skel {
 			// log value scaling of movement for fader
 			let g = 4
 			let f = this.watchlist.get(this.buildWatchKey('FD', aChannel)).args[1]
-			if (f == 0) {f=0.0001}
+			if (f === 0 || f === undefined) {f=0.0001}
 			if (this.config.log_fader_move_enabled) {
 				let result = Math.round(10*(aValue * Math.exp(Math.log10(Math.abs(f/g)))))/10 // 1 decimal place
 				return Math.abs(result) > Math.abs(aValue) ? result : aValue // miniumum move is aValue
