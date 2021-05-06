@@ -1,71 +1,54 @@
 ## Roland M-5000
 
-This module will allow you to control a Roland M-5000 Audio Console.
+This module will allow you to control a Roland M-5000 Audio Console. With a serial bridge it will also control the M-2xx, M-3xx and M-2xx models using a serial connection
 
-> The Roland only accepts 1 connection at a time
+> The Roland M-5000 only accepts 1 connection at a time over ethernet. The serial mixer will need a serial cable (USB Prolific chipset tested) and probably a null modem cable/adapter depending on the cable.
+
+The serial bridge has been tested with the TCP-Serial module and the VMXProxy open source software by James Covey-Crump (on GitHub). The latter has a simulator which is good for testing.
+
+Many of the available actions on the mixr are implemented. There are a few missing which could be added.
 
 ### Configuration
-* Enter the IP address of the device in the configuration settings.
-* The device will use TCP port 8023.
+* Enter the IP address of the device in the configuration settings. (127.0.0.1 for serial bridge running locally)
+* The M-5000 will listen on TCP port 8023. Set serial bridge to listen on 8023 for serial mixers.
+* There is a configuration setting for the mixer model which creates the correct number of channels and function choices for each mixer variant
+* The polling interval to get feedback data can be set in the configuration.
+* For serial mixers you will need to set the serial bridge and the mixer serial settings to match -  115kbps tested.
+* If a fader level is requested to go above maximum or below minimum levels an Out of Range Error is shown in the log
+* There is also a bug in the Roland mixer software that sends an Out of Range Error when a MAIN fader command is sent. The command works but sends an error!
+* There is a configuration field to enable/disable Out of Range Errors in the log
+* There are configuration fields to set he default value for relative fader moves and enable a logarithmic response 
 
 **Available actions:**
-* Input Channel Phantom Power On/Off
-* User Fader Phantom Power On/Off
-* Input Channel EQ On/Off
-* Subgroup Channel EQ On/Off
-* Aux Channel EQ On/Off
-* Mix Minus Channel EQ On/Off
-* Matrix Channel EQ On/Off
-* Main Channel EQ On/Off
-* User Fader EQ On/Off
-* Set Input Channel Aux Send/Aux Pan Level
-* Set User Fader Aux Send/Aux Pan Level
-* Set Input Channel Pan
-* Set Subroup Channel Pan
-* Set Aux Channel Pan
-* Set User Fader Pan
-* Mute/Unmute Input Channel
-* Mute/Unmute Subgroup Channel
-* Mute/Unmute Mix Minus Channel
-* Mute/Unmute Matrix Channel
-* Mute/Unmute Main Channel
-* Mute/Unmute DCA Channel
-* Mute/Unmute Mute Group
-* Mute/Unmute User Fader
-* Input Channel Fader Level
-* Subgroup Channel Fader Level
-* Aux Channel Fader Level
-* Mix Minus Channel Fader Level
-* Main Channel Fader Level
-* Monitor Channel Fader Level
-* DCA Channel Fader Level
-* User Fader Level
-* Input Channel Relative Fader Level
-* Subgroup Channel Relative Fader Level
-* Aux Channel Relative Fader Level
-* Mix Minus Channel Relative Fader Level
-* Main Channel Relative Fader Level
-* Monitor Channel Relative Fader Level
-* DCA Channel Relative Fader Level
-* User Fader Relative Fader Level
-* Recall Scene
-* Recall Relative Scene
-* Store Scene
-* Create New Scene
-* Set Display Brightness
-* Set Panel Brightness
-* Set Lamp Brightness
+* Input, User Channel Phantom Power On/Off
+* Input, User, Aux, Subgroup Mix Minus, Matrix, Main Channel EQ On/Off
+* Set Input, User Channel Aux Send/Aux Pan Level
+* Set Input, Subgroup, Aux, User Channel Pan
+* Mute/Unmute Input, Subgroup, Mix Minus, Matrix, Main, DCA, Mute Group, User Channel
+* Input, Subgroup, Aux, Mix Minus, Main, Monitor, DCA, User Channel Fader and Relative Fader Level
+* (moving Relative Fader Level past minimum/maximum values or a Main fader move will generate an out of range error in the log)
+* Recall Scene and Relative Scene
+* Store Scene and Create New Scene
+* Set Display, Panel and Lamp Brightness
 * Monitor Dimmer On/Off
-* Start USB Recording
-* Stop USB Recording
-* Pause USB Recording
-* Jump to USB recording location
-* Set USB Recording Song
+* Start, Stop and Pause USB Recording
+* Jump to USB recording location or recording Song
 
-**Variables:** (not yet implemented)
-* Channel Names
+**Variables:**
+* Channel Names - names are retrieved at start-up only. It is assumed they don't change much so they are not polled to keep serial load down. 
+* If a requested channel name has not been assigned on the mixer it will cause an out of range error in the log. See above to disable the errors.
+
+**Feedbacks:** 
+* Channel Mute Status
+* Channel Level
 * Phantom Power Status
 * EQ Status
+
+**Presets:** 
+* There are three presets in groups for each channel type: A simple up/down relative fader action and a channel status button which gives the channel name, level and a mute toggle.
+
+#### Possible additions if needed
+**Possible future Variables:** (not yet implemented)
 * Aux Send / Pan Levels
 * Channel Pan Levels
 * Channel Mutes
@@ -83,10 +66,7 @@ This module will allow you to control a Roland M-5000 Audio Console.
 * USB Recorder Song Name
 * USB Recorder Remaining Time
 
-**Feedbacks:** (not yet implemented)
-* Phantom Power Status
-* EQ Status
-* Channel Mute Status
+**Possible future Feedbacks:** (not yet implemented)
 * USB Recorder Status
 
 **Serial Mixers:** (Needs serial bridge)

@@ -1,12 +1,22 @@
 {
 	"name": "roland-m5000",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"api_version": "1.0.0",
-	"keywords": [ "Audio Console" ],
+	"keywords": [
+		"Audio Console",
+		"V-Mixer"
+	],
 	"manufacturer": "Roland",
-	"product": "M-5000",
+	"product": [
+		"M-5000", 
+		"M-200i (via serial bridge)",
+		"M-300 (via serial bridge)",
+		"M-380 (via serial bridge)",
+		"M-400 (via serial bridge)",
+		"M-480 (via serial bridge)"
+	],
 	"shortname": "m5000",
-	"description": "",
+	"description": "For M-5000 and with serial bridge, M-2xx, M-3xx and M-4xx",
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
@@ -16,9 +26,12 @@
 		"url": "git+https://github.com/bitfocus/companion-module-roland-m5000.git"
 	},
 	"author": "Joseph Adams <josephdadams@gmail.com>",
+	"contributors":["James Rankin <james@rankinfamily.com>"],
 	"license": "MIT",
 	"bugs": {
 		"url": "https://github.com/bitfocus/companion-module-roland-m5000/issues"
 	},
-	"homepage": "https://github.com/bitfocus/companion-module-roland-m5000#readme"
+	"homepage": "https://github.com/bitfocus/companion-module-roland-m5000#readme",
+	"devDependencies": {
+	}
 }

@@ -1,0 +1,82 @@
+{
+	"modelconfig" : {
+		"M-5000" : {
+			"ICount":	128,
+			"RCount":	0,
+			"AXCount":	64,
+			"SGCount":	64,
+			"MONCount":	2,
+			"UCount":	64,
+			"MMCount":	64,
+			"DCACount":	24,
+			"MXCount":	64,
+			"MGCount":	8,
+            "UserSets": 3
+		},
+        "M-480" : {
+			"ICount":	48,
+			"RCount":	6,
+			"AXCount":	16,
+			"SGCount":	0,
+			"MONCount":	0,
+			"UCount":	72,
+			"MMCount":	0,
+			"DCACount":	24,
+			"MXCount":	8,
+			"MGCount":	8,
+            "UserSets": 1
+		},
+        "M-400" : {
+			"ICount":	48,
+			"RCount":	0,
+			"AXCount":	16,
+			"SGCount":	0,
+			"MONCount":	0,
+			"UCount":	72,
+			"MMCount":	0,
+			"DCACount":	8,
+			"MXCount":	8,
+			"MGCount":	8,
+            "UserSets": 1
+		},
+        "M-380" : {
+			"ICount":	48,
+			"RCount":	0,
+			"AXCount":	16,
+			"SGCount":	0,
+			"MONCount":	0,
+			"UCount":	72,
+			"MMCount":	0,
+			"DCACount":	8,
+			"MXCount":	8,
+			"MGCount":	8,
+            "UserSets": 1
+		},
+        "M-300" : {
+			"ICount":	32,
+			"RCount":	0,
+			"AXCount":	8,
+			"SGCount":	0,
+			"MONCount":	0,
+			"UCount":	32,
+			"MMCount":	0,
+			"DCACount":	4,
+			"MXCount":	4,
+			"MGCount":	4,
+            "UserSets": 1
+		},
+        "M-200" : {
+			"ICount":	32,
+			"RCount":	0,
+			"AXCount":	8,
+			"SGCount":	0,
+			"MONCount":	0,
+			"UCount":	32,
+			"MMCount":	0,
+			"DCACount":	8,
+			"MXCount":	4,
+			"MGCount":	4,
+            "UserSets": 1
+		}
+	}
+}
