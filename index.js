@@ -85,7 +85,7 @@ class instance extends instance_skel {
     this.initPolling();
 
     this.initPresets();
-}
+  }
 
   initMixerData() {
     // mixer models have variant channel types, counts and function scopes
@@ -1331,10 +1331,10 @@ class instance extends instance_skel {
             options: {
               channel: aChoice,
             },
-			style: {
-				color: fg,
-				bgcolor: bg
-			  }, 
+            style: {
+              color: fg,
+              bgcolor: bg,
+            },
           },
         ],
       };
@@ -1365,10 +1365,10 @@ class instance extends instance_skel {
             options: {
               channel: aChoice,
             },
-			style: {
-				color: fg,
-				bgcolor: bg
-			  },
+            style: {
+              color: fg,
+              bgcolor: bg,
+            },
           },
           {
             type: aScope + "_channel_level",
@@ -1405,14 +1405,26 @@ class instance extends instance_skel {
 
     this.SCOPE_MUTE.forEach((item) => {
       presets.push(
-        aSwitchLevelPreset("mute", item.channel, item.choices[0].id, this.rgb(255, 255, 255), this.rgb(255, 0, 0))
-		)
+        aSwitchLevelPreset(
+          "mute",
+          item.channel,
+          item.choices[0].id,
+          this.rgb(255, 255, 255),
+          this.rgb(255, 0, 0)
+        )
+      );
     });
     this.SCOPE_MUTE_GROUP.forEach((item) => {
       presets.push(
-		aSwitchPreset("mute", item.channel, item.choices[0].id, this.rgb(255, 255, 255), this.rgb(255, 0, 0))
-	  )
-    }); 
+        aSwitchPreset(
+          "mute",
+          item.channel,
+          item.choices[0].id,
+          this.rgb(255, 255, 255),
+          this.rgb(255, 0, 0)
+        )
+      );
+    });
     this.SCOPE_FADER.forEach((item) => {
       presets.push(
         aFaderPreset(
